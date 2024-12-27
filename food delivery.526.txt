@@ -1,0 +1,152 @@
+#include <stdio.h>
+
+// Define structures for food items, orders, and cancelled orders
+struct FoodItem {
+    int id; 
+    char name[50]; 
+    float price;
+};
+
+struct Order {
+    int itemID;  
+    int quantity;
+};
+
+struct CancelledOrder {
+    int itemID;  
+    int quantity;
+};
+
+// Function to display the menu
+void displayMenu(struct FoodItem menu[], int size) {
+    printf("\n===== Welcome to Zomato Food Ordering System =====\n");
+    for (int i = 0; i < size; i++) {
+        printf("%d. %s - $%.2f\n", menu[i].id, menu[i].name, menu[i].price);
+    }
+}
+
+// Function to apply discount
+float applyDiscount(float total) {
+    if (total > 50) {
+        float discount = total * 0.1;
+        printf("\n10%% discount applied: -$%.2f\n", discount);
+        return discount;
+    }
+    return 0.0;
+}
+
+// Function to handle order placement
+void placeOrder(struct FoodItem menu[], int size, struct Order orders[], struct CancelledOrder cancelledOrders[], int *orderCount, int *cancelledCount) {
+    int choice, quantity;
+    char moreOrders, cancelOrder;
+
+    do {
+        printf("\nEnter food item number (1-%d): ", size);
+        scanf("%d", &choice);
+
+        if (choice < 1 || choice > size) {
+            printf("Invalid choice!\n");
+            continue;
+        }
+
+        printf("Enter quantity for %s: ", menu[choice - 1].name);
+        scanf("%d", &quantity);
+
+        orders[*orderCount] = (struct Order){choice, quantity};
+        (*orderCount)++;
+
+        printf("You ordered %d %s(s).\n", quantity, menu[choice - 1].name);
+        printf("Cancel last order? (y/n): ");
+        getchar();  // Clear buffer
+        scanf("%c", &cancelOrder);
+
+        if (cancelOrder == 'y' || cancelOrder == 'Y') {
+            cancelledOrders[*cancelledCount] = (struct CancelledOrder){orders[*orderCount - 1].itemID, orders[*orderCount - 1].quantity};
+            (*cancelledCount)++;
+            (*orderCount)--; 
+            printf("Last order cancelled.\n");
+        }
+
+        printf("Order more items? (y/n): ");
+        getchar();
+        scanf("%c", &moreOrders);
+
+    } while (moreOrders == 'y' || moreOrders == 'Y');
+}
+
+// Function to show order summary
+void showOrderSummary(struct FoodItem menu[], struct Order orders[], int orderCount) {
+    float total = 0.0;
+    printf("\n===== Order Summary =====\n");
+    for (int i = 0; i < orderCount; i++) {
+        int id = orders[i].itemID;
+        total += menu[id - 1].price * orders[i].quantity;
+        printf("%s (x%d) - $%.2f\n", menu[id - 1].name, orders[i].quantity, menu[id - 1].price * orders[i].quantity);
+    }
+    total -= applyDiscount(total);
+    printf("\nTotal amount: $%.2f\n", total);
+}
+
+// Function to view cancelled orders
+void viewCancelledOrders(struct CancelledOrder cancelledOrders[], int cancelledCount, struct FoodItem menu[]) {
+    if (!cancelledCount) {
+        printf("\nNo cancelled orders.\n");
+        return;
+    }
+    printf("\n===== Cancelled Orders =====\n");
+    for (int i = 0; i < cancelledCount; i++) {
+        printf("Cancelled #%d: %s (x%d)\n", i + 1, menu[cancelledOrders[i].itemID - 1].name, cancelledOrders[i].quantity);
+    }
+    printf("\nEnd of Cancelled Orders.\n");
+}
+
+// Function to view order history
+void viewOrderHistory(struct Order orderHistory[], int historyCount, struct FoodItem menu[]) {
+    if (!historyCount) {
+        printf("\nNo order history.\n");
+        return;
+    }
+    printf("\n===== Order History =====\n");
+    for (int i = 0; i < historyCount; i++) {
+        printf("Order #%d: %s (x%d)\n", i + 1, menu[orderHistory[i].itemID - 1].name, orderHistory[i].quantity);
+    }
+    printf("\nEnd of Order History.\n");
+}
+
+int main() {
+    struct FoodItem menu[] = {
+        {1, "special briyani", 12.99},
+        {2, "Burger", 8.49},
+        {3, "Pasta", 10.99},
+        {4, "briyani", 15.50},
+        {5, "gobi", 6.00}
+    };
+    struct Order orders[100], orderHistory[100];
+    struct CancelledOrder cancelledOrders[100];
+    
+    int orderCount = 0, cancelledCount = 0, historyCount = 0;
+    int menuSize = sizeof(menu) / sizeof(menu[0]);
+
+    displayMenu(menu, menuSize);
+    placeOrder(menu, menuSize, orders, cancelledOrders, &orderCount, &cancelledCount);
+    showOrderSummary(menu, orders, orderCount);
+
+    for (int i = 0; i < orderCount; i++) {
+        orderHistory[historyCount++] = orders[i];
+    }
+
+    char viewHistoryChoice, viewCancelledChoice;
+    printf("\nView previous orders? (y/n): ");
+    getchar();  // Clear the newline from buffer
+    scanf("%c", &viewHistoryChoice);
+    if (viewHistoryChoice == 'y' || viewHistoryChoice == 'Y') viewOrderHistory(orderHistory, historyCount, menu);
+
+    printf("\nView cancelled orders? (y/n): ");
+    getchar();
+    scanf("%c", &viewCancelledChoice);
+    if (viewCancelledChoice == 'y' || viewCancelledChoice == 'Y') viewCancelledOrders(cancelledOrders, cancelledCount, menu);
+
+    printf("\nThank you for ordering with Zomato!\n");
+
+    return 0;
+}
