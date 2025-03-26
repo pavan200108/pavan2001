@@ -1,0 +1,142 @@
+#include <stdio.h>
+#include <string.h>
+
+// Food menu structure
+struct Food {
+    int code;
+    char name[30];
+    float price;
+};
+
+// Order structure to keep track of orders
+struct Order {
+    int foodCode;
+    int quantity;
+};
+
+// Function prototypes
+void displayMenu(struct Food menu[], int size);
+float placeOrder(struct Food menu[], int size, struct Order orders[], int *orderCount);
+void cancelOrder(struct Order orders[], int *orderCount, struct Food menu[]);
+void payment(float total);
+
+int main() {
+    struct Food menu[] = {
+        {1, "Pizza", 250.0},
+        {2, "Burger", 150.0},
+        {3, "Pasta", 200.0},
+        {4, "Fries", 100.0}
+    };
+    int size = sizeof(menu) / sizeof(menu[0]);
+    struct Order orders[100]; // Array to store orders
+    int orderCount = 0;       // Number of orders placed
+    float total;
+
+    printf("Welcome to the Food Order Management System\n");
+    
+    // Display menu and place orders
+    displayMenu(menu, size);
+    total = placeOrder(menu, size, orders, &orderCount);
+
+    // Option to cancel the last order
+    char choice;
+    printf("\nDo you want to cancel the last order? (y/n): ");
+    scanf(" %c", &choice);
+
+    if (choice == 'y' || choice == 'Y') {
+        cancelOrder(orders, &orderCount, menu);
+        total = 0; // Recalculate total after cancellation
+        for (int i = 0; i < orderCount; i++) {
+            total += menu[orders[i].foodCode - 1].price * orders[i].quantity;
+        }
+        printf("\nUpdated Total Bill: Rs. %.2f\n", total);
+    }
+
+    payment(total);
+
+    return 0;
+}
+
+// Display menu
+void displayMenu(struct Food menu[], int size) {
+    printf("\nAvailable Menu:\n");
+    for (int i = 0; i < size; i++) {
+        printf("%d. %s - Rs. %.2f\n", menu[i].code, menu[i].name, menu[i].price);
+    }
+}
+
+// Place order
+float placeOrder(struct Food menu[], int size, struct Order orders[], int *orderCount) {
+    int code, quantity;
+    float total = 0;
+    char choice;
+
+    do {
+        printf("\nEnter food code to order: ");
+        scanf("%d", &code);
+        
+        // Validate food code
+        if (code < 1 || code > size) {
+            printf("Invalid food code! Please try again.\n");
+            continue;
+        }
+
+        printf("Enter quantity: ");
+        scanf("%d", &quantity);
+
+        if (quantity > 0) {
+            // Add order details to the array
+            orders[*orderCount].foodCode = code;
+            orders[*orderCount].quantity = quantity;
+            (*orderCount)++;
+            total += menu[code - 1].price * quantity; // Adjust index for price calculation
+            printf("Added %d x %s to your order.\n", quantity, menu[code - 1].name); // Adjust index for name
+        } else {
+            printf("Quantity must be greater than zero!\n");
+        }
+
+        printf("Do you want to order more? (y/n): ");
+        scanf(" %c", &choice);
+
+    } while (choice == 'y' || choice == 'Y');
+
+    return total;
+}
+
+// Cancel last order
+void cancelOrder(struct Order orders[], int *orderCount, struct Food menu[]) {
+    if (*orderCount > 0) {
+        (*orderCount)--; // Remove the last order
+        printf("Last order canceled successfully.\n");
+
+        // Display remaining orders if any
+        if (*orderCount > 0) {
+            printf("Remaining Orders:\n");
+            for (int i = 0; i < *orderCount; i++) {
+                printf("%d x %s\n", orders[i].quantity,
+                       menu[orders[i].foodCode - 1].name); // Adjust index for food name
+            }
+        } else {
+            printf("No remaining orders.\n");
+        }
+
+    } else {
+        printf("No orders to cancel.\n");
+    }
+}
+
+// Payment method
+void payment(float total) {
+    int method;
+    printf("\nSelect Payment Method:\n1. Cash\n2. Credit\n");
+    printf("Enter your choice: ");
+    scanf("%d", &method);
+
+    if (method == 1) {
+        printf("Payment of Rs. %.2f received in cash.\n", total);
+    } else if (method == 2) {
+        printf("Payment of Rs. %.2f charged to credit card.\n", total);
+    } else {
+        printf("Invalid payment method selected.\n");
+    }
+}
